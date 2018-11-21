@@ -43,7 +43,7 @@ client.on('message', message => {
 			if (result === false)
 				message.channel.send('syntax: ' + ROLL_MESSAGE);
 			else 
-				message.channel.send(message.member.nickname + " rolled an " + result);
+				message.channel.send(message.member.nickname + " rolled a " + result);
 		}
 		else if (content.startsWith('!flip')) {
 			result = rand(1, 2);
