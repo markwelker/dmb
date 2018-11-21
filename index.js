@@ -1,14 +1,18 @@
 const Discord = require('discord.js');
+const { prefix, token } = require('./config.json');
 const client = new Discord.Client();
 
-ROLL_MESSAGE = '!roll [quantity]d[size][+-modifier]';
-HELP_MESSAGE = 	'Command syntax goes as follows: !command [option 1][opt 2] (results)\n' + 
+const ROLL_MESSAGE = '!roll [quantity]d[size][+-modifier] (rolls quantity dice of given size)';
+const FLIP_MESSAGE = '!flip (Flips a coin, heads or tails)';
+const HELP_MESSAGE = 	'Command syntax goes as follows: !command [option 1][opt 2] (results)\n' + 
 				'!help (displays this again)\n' +
+				FLIP_MESSAGE + '\n' +
 				ROLL_MESSAGE + '\n';
 
 client.on('message', message => {
 	content = message.content
-	if (content[0] === '!' && !message.author.bot) {
+	
+	if (content[0] === prefix && !message.author.bot) {
 		// send back "Pong." to the channel the message was sent in
 		if (content.startsWith('!help')) {
 			message.channel.send(HELP_MESSAGE);
@@ -18,19 +22,18 @@ client.on('message', message => {
 			if (result === false)
 				message.channel.send('syntax: ' + ROLL_MESSAGE);
 			else 
-				message.channel.send(result);
+				message.channel.send(message.member.nickname + " rolled an " + result);
 		}
 		if (content.startsWith('!flip')) {
 			result = rand(1, 2);
 			if (result === 0)
-				message.channel.send('Heads!');
+				message.channel.send(message.member.nickname + ' got Heads!');
 			else 
-				message.channel.send('Tails!');
+				message.channel.send(message.member.nickname + ' got Tails!');
 		}
 		else if (content.startsWith('!test') || content.startsWith('!bot')) {
 			message.channel.send('Beep Boop. I\'m a bot.');
 		}
-		console.log(message.content);
 	}
 });
 
@@ -38,7 +41,7 @@ client.once('ready', () => {
 	console.log('Ready!');
 });
 
-client.login('NTE0NTU3MzM5OTI4MzYzMDE3.DtdPiQ.NUCYVeN2WEuFeO0tqlY0zxb6RVs');
+client.login(token);
 
 
 /******************************** Functions ********************************/
