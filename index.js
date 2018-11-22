@@ -10,7 +10,7 @@ const HELP_MESSAGE = 	'Command syntax goes as follows: !command [option 1][opt 2
 				ROLL_MESSAGE + '\n';
 
 client.on('message', message => {
-	content = message.content
+	content = message.content.toLowerCase();
 	
 	if (content[0] === prefix && !message.author.bot) {
 		// send back "Pong." to the channel the message was sent in
@@ -54,6 +54,9 @@ client.on('message', message => {
 		}
 		else if (content.startsWith('!test') || content.startsWith('!bot')) {
 			message.channel.send('Beep Boop. I\'m a bot.');
+		}
+		else if (content.startsWith('!thanks')) {
+			message.channel.send('You\'re very welcome. Beep Boop.');
 		}
 	}
 });
