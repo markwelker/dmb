@@ -99,6 +99,7 @@ function getTime() {
 }
 
 /**
+ * Returns a randomized number with the given parameters
  * @param {int} quantity	Number of dice rolled
  * @param {int} size 		Size of the dice
  * @param {int} modifier 	Modifier of total roll, positive or negative allowed.
@@ -113,7 +114,8 @@ function rand(quantity = 1, size = 20, modifier = 0) {
 
 /**
  * 
- * @param {string} content Full message the bot received, already parsed and removed !roll
+ * @param {String} content Triggering message the bot received minus the !roll trigger
+ * @return {Integer} number rolled on dice. #TODO Possibly change to string for nicer formatting?
  */
 function roll(content) {
 	content = content.replace(/\s+/g, '')
@@ -159,13 +161,25 @@ function roll(content) {
 	}
 }
 
-function spellLookupName(content) {
-	return axios.get('http://dnd5eapi.co/api/spells/?name=' + content).then(response => {
+/**
+ * Utilizes and returns a two-level deep ES6 Promise with spell info
+ * given a correctly spelled and capitalized spell name
+ * @param {String} spellName spell name
+ * @return {Promise} contains the spell's information
+ */
+function spellLookupName(spellName) {
+	return axios.get('http://dnd5eapi.co/api/spells/?name=' + spellName).then(response => {
 		return axios.get(response.data.results[0].url);
 	});
 }
-
+/**
+ * Formats spell information into a pretty string format
+ * @param {JSON} spell Spell data retrieved from our API
+ * @return {String} prettified spell string
+ */
 function spellToString(spell) {
-	return spell.name + ':\n' + 'Range: ' + spell.range + '\n' +
+	return spell.name + ':\n' + 
+	'Level ' + spell.level + ' ' + spell.school.name + '\n' +
+	'Range: ' + spell.range + '\n' +
 	'Components: ' + spell.components.join(', ') + '\n' + spell.desc;
 }
