@@ -1,22 +1,25 @@
 const Discord = require('discord.js');
 const { prefix, token } = require('./config.json');
 const client = new Discord.Client();
+const axios = require('axios');
 
 const ROLL_MESSAGE = '!roll [quantity]d[size][+-modifier] (rolls quantity dice of given size) given quantity and size <= 100\n\t\tAlternatives: !rolladv and !rolldis for advantage and disadvantage.';
 const FLIP_MESSAGE = '!flip (Flips a coin, heads or tails)';
+const SPELL_MESSAGE = '!spell [Spell Name] (Spelling and Capitalization must be exact match)';
 const HELP_MESSAGE = 	'Command syntax goes as follows: !command [option 1][opt 2] (results)\n' + 
 				'!help (displays this again)\n' +
 				FLIP_MESSAGE + '\n' +
-				ROLL_MESSAGE + '\n';
+				ROLL_MESSAGE + '\n' + 
+				SPELL_MESSAGE;
 
 client.on('message', message => {
-	content = message.content.toLowerCase();
-	
+	content = message.content;
 	if (content[0] === prefix && !message.author.bot) {
 		// send back "Pong." to the channel the message was sent in
-		if (content.startsWith('!help')) {
+		if (content.startsWith('!help') || content.startsWith('!syntax')) {
 			message.channel.send(HELP_MESSAGE);
 		}
+
 		/***************** Roll with Advantage *****************/
 		if (content.startsWith('!rolladv')) {
 			first = roll(content.substring(8))
@@ -27,6 +30,7 @@ client.on('message', message => {
 				message.channel.send(message.member.nickname + " rolled a " + first + " and " + second + 
 										' for a higher roll of: ' + Math.max(first, second));
 		}
+
 		/***************** Roll with Disdvantage *****************/
 		else if (content.startsWith('!rolldis')) {
 			first = roll(content.substring(8))
@@ -37,6 +41,7 @@ client.on('message', message => {
 				message.channel.send(message.member.nickname + " rolled a " + first + " and " + second + 
 										' for a lower roll of: ' + Math.min(first, second));
 		}
+
 		/***************** Roll Normally *****************/
 		else if (content.startsWith('!roll')) {
 			result = roll(content.substring(5))
@@ -45,6 +50,8 @@ client.on('message', message => {
 			else 
 				message.channel.send(message.member.nickname + " rolled a " + result);
 		}
+
+		/***************** Flip a Coin *****************/
 		else if (content.startsWith('!flip')) {
 			result = rand(1, 2);
 			if (result === 0)
@@ -52,10 +59,24 @@ client.on('message', message => {
 			else 
 				message.channel.send(message.member.nickname + ' got Tails!');
 		}
+
+		/***************** Spell Lookup *****************/
+		else if (content.startsWith('!spell')) {
+			spellName = content.substr(content.indexOf(' ')+1);
+			spellLookupName(spellName).then(response => {
+				message.channel.send(spellToString(response.data));
+			}).catch(error => {
+				console.log('spellLookupName error: ' + error);
+				message.channel.send("I couldn\'t find '" + spellName + "', try checking spelling/capitalization?");
+			})
+
+		}
+
+		/***************** Fun Functions *****************/
 		else if (content.startsWith('!test') || content.startsWith('!bot')) {
 			message.channel.send('Beep Boop. I\'m a bot.');
 		}
-		else if (content.startsWith('!thanks')) {
+		else if (content.startsWith('!thank')) {
 			message.channel.send('You\'re very welcome. Beep Boop.');
 		}
 	}
@@ -69,6 +90,13 @@ client.login(token);
 
 
 /******************************** Functions ********************************/
+/**
+ * Returns a string timestamp formatted like 10/30, 16:57:38
+ */
+function getTime() {
+	var d = new Date();
+	return d.getMonth()+'/'+d.getDate()+', '+d.getHours()+':'+d.getMinutes()+':'+d.getSeconds();
+}
 
 /**
  * @param {int} quantity	Number of dice rolled
@@ -88,7 +116,7 @@ function rand(quantity = 1, size = 20, modifier = 0) {
  * @param {string} content Full message the bot received, already parsed and removed !roll
  */
 function roll(content) {
-	content = content.replace(/\s+/g, '');
+	content = content.replace(/\s+/g, '')
 	length = content.length;
 	index = 0  // Will always look at the next character in content.
 	if (length == index) // empty, so return default
@@ -106,8 +134,6 @@ function roll(content) {
 		}
 
 		size = parseInt(content.substring(index));
-		console.log('quantity: ' + quantity);
-		console.log('size: ' + size);
 
 		if (isNaN(size) || quantity < 1 || size < 1 || quantity > 100 || size > 100 ) return false;
 
@@ -121,14 +147,25 @@ function roll(content) {
 		index += 1;
 		
 		modifier = parseInt(content.substring(index));
-		console.log('index: ' + index + 'at: ' + content[index]);
-		console.log('modifier: ' + modifier);
 
 		if (subtraction) return rand(quantity, size, -1 * modifier);
 		else return rand(quantity, size, modifier);
 		
 	} catch (e) {
+		var d = new Date();
+		console.log('Error caught in roll(): ' + getTime());
 		console.log(e)
 		return false;
 	}
+}
+
+function spellLookupName(content) {
+	return axios.get('http://dnd5eapi.co/api/spells/?name=' + content).then(response => {
+		return axios.get(response.data.results[0].url);
+	});
+}
+
+function spellToString(spell) {
+	return spell.name + ':\n' + 'Range: ' + spell.range + '\n' +
+	'Components: ' + spell.components.join(', ') + '\n' + spell.desc;
 }
